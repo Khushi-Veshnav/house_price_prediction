@@ -43,7 +43,7 @@ Terminal 2 – UI:
 ```bash
 streamlit run frontend/app.py
 ```
-Open http://localhost:8501.
+Open [http://localhost:8501.](https://housepriceprediction-blond.vercel.app/)
 
 API example:
 ```bash
