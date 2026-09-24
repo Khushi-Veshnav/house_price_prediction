@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>House Price Predictor</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏠</text></svg>">
+<style>
+  :root { --bg:#f6f7fb; --card:#fff; --text:#1c2333; --muted:#6b7280; --accent:#2563eb; --border:#e5e7eb; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#0f1320; --card:#171c2e; --text:#e8ebf5; --muted:#98a2b8; --accent:#5b8cff; --border:#2a3148; }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background:var(--bg); color:var(--text); }
+  main { max-width: 760px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1 { margin: 0 0 4px; font-size: 1.8rem; }
+  .sub { color: var(--muted); margin: 0 0 24px; }
+  .card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:20px; }
+  form { display:grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap:14px; }
+  label { display:flex; flex-direction:column; gap:4px; font-size:.85rem; color:var(--muted); }
+  input { padding:10px; font-size:1rem; border:1px solid var(--border); border-radius:8px; background:var(--bg); color:var(--text); }
+  input:focus { outline:2px solid var(--accent); border-color:transparent; }
+  small { font-size:.72rem; }
+  button { grid-column: 1 / -1; padding:12px; font-size:1rem; font-weight:600; border:0; border-radius:10px; background:var(--accent); color:#fff; cursor:pointer; }
+  button:disabled { opacity:.6; cursor:wait; }
+  #result { margin-top:20px; text-align:center; display:none; }
+  #result .price { font-size:2.4rem; font-weight:700; color:var(--accent); }
+  #error { color:#dc2626; margin-top:14px; text-align:center; }
+  footer { margin-top:20px; color:var(--muted); font-size:.85rem; text-align:center; }
+</style>
+</head>
+<body>
+<main>
+  <h1>🏠 House Price Predictor</h1>
+  <p class="sub">Linear Regression model served by a Flask API on Vercel.</p>
+  <div class="card">
+    <form id="form"><button type="submit" id="btn">Predict price</button></form>
+    <div id="error"></div>
+    <div id="result"><div class="muted">Estimated price</div><div class="price" id="price"></div></div>
+  </div>
+  <footer id="foot"></footer>
+</main>
+<script>
+const form = document.getElementById("form"), btn = document.getElementById("btn");
+const errEl = document.getElementById("error"), resEl = document.getElementById("result");
+let features = [];
+
+const label = f => f.replace(/_/g, " ");
+
+async function init() {
+  try {
+    const s = await (await fetch("/api/schema")).json();
+    features = s.features;
+    for (const f of features) {
+      const [lo, hi] = s.ranges[f], d = s.defaults[f];
+      const int = Number.isInteger(lo) && Number.isInteger(hi);
+      const wrap = document.createElement("label");
+      wrap.innerHTML = `${label(f)}<input name="${f}" type="number" required
+        min="${int ? lo : lo.toFixed(2)}" max="${int ? hi : hi.toFixed(2)}" step="${int ? 1 : "any"}"
+        value="${int ? Math.round(d) : d.toFixed(2)}"><small>Range: ${int ? lo : lo.toFixed(1)} – ${int ? hi : hi.toFixed(1)}</small>`;
+      form.insertBefore(wrap, btn);
+    }
+    document.getElementById("foot").textContent =
+      `${s.model} · R² ${s.metrics.R2.toFixed(3)} · MAE $${Math.round(s.metrics.MAE).toLocaleString()} · ${s.n_rows} training rows`;
+  } catch (e) { errEl.textContent = "Could not load model schema."; }
+}
+
+form.addEventListener("submit", async e => {
+  e.preventDefault();
+  errEl.textContent = ""; btn.disabled = true;
+  const body = Object.fromEntries(features.map(f => [f, parseFloat(form.elements[f].value)]));
+  try {
+    const r = await fetch("/api/predict", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || "Prediction failed");
+    document.getElementById("price").textContent = "$" + Math.round(data.predicted_price).toLocaleString();
+    resEl.style.display = "block";
+  } catch (err) { errEl.textContent = err.message; resEl.style.display = "none"; }
+  btn.disabled = false;
+});
+init();
+</script>
+</body>
+</html>

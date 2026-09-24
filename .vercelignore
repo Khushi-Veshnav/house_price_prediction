@@ -1,0 +1,17 @@
+data/
+report_images/
+frontend/
+backend/
+*.ipynb
+*.docx
+house-price-prediction-project-report.html
+generate_report.py
+house_price_main.py
+train_model.py
+tests_smoke.py
+model/*.pkl
+model/metrics.json
+.venv/
+__pycache__/
+*.log
+*.zip
