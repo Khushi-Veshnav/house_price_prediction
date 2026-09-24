@@ -3,14 +3,27 @@
 Endpoints (all under /api):  GET /api/health   GET /api/schema   POST /api/predict
 Model parameters come from model/params.json, written by train_model.py.
 """
+import csv
 import json
 import math
 from pathlib import Path
 
 from flask import Flask, jsonify, request
 
-PARAMS = json.loads((Path(__file__).resolve().parent.parent / "model" / "params.json").read_text())
+ROOT = Path(__file__).resolve().parent.parent
+PARAMS = json.loads((ROOT / "model" / "params.json").read_text())
 FEATURES = PARAMS["features"]
+COLUMNS = FEATURES + [PARAMS["target"]]
+
+
+def _load_rows():
+    """Dataset used by the dashboard chart (read once per cold start)."""
+    path = ROOT / "data" / "house_price_regression_dataset.csv"
+    with open(path, newline="") as fh:
+        return [[round(float(r[c]), 2) for c in COLUMNS] for r in csv.DictReader(fh)]
+
+
+ROWS = _load_rows()
 
 app = Flask(__name__)
 
@@ -29,6 +42,11 @@ def health():
 def schema():
     return jsonify(features=FEATURES, ranges=PARAMS["ranges"], defaults=PARAMS["defaults"],
                    model=PARAMS["model"], metrics=PARAMS["metrics"], n_rows=PARAMS["n_rows"])
+
+
+@app.get("/api/data")
+def data():
+    return jsonify(columns=COLUMNS, rows=ROWS)
 
 
 @app.post("/api/predict")
