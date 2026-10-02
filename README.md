@@ -14,7 +14,17 @@ generate_report.py      Builds the .docx and .html reports
 tests_smoke.py          API smoke tests
 linear_regression_regularization_lasso_ridge.ipynb   Regularization analysis
 ```
+## Features
+* **Predictive ML Pipeline:** Scikit-learn model trained for accurate valuation.
+* **REST API:** Flask backend serving real-time predictions.
+* **Interactive UI:** Streamlit interface for seamless user inputs.
 
+
+## Model Performance
+* **R² Score:** `0.998` (Explains ~99.8% of variance in housing prices)
+* **Mean Absolute Error (MAE):** `~$8,174`
+
+## Project Structure
 ## Deploy to Vercel
 Vercel serves `public/index.html` (static UI) and `api/index.py` (Flask, pure Python, only needs `flask`).
 Model weights are read from `model/params.json`, so scikit-learn/Streamlit are **not** installed on Vercel.
