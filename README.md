@@ -3,6 +3,7 @@
 End-to-end ML app: **scikit-learn** model → **Flask** REST API → **Streamlit** UI, plus auto-generated Word/HTML reports.
 
 ## Structure
+![App Screenshot](image/housepriceprediction-blond.vercel.app_.png)
 ```
 backend/app.py          Flask API (/predict, /health)
 frontend/app.py         Streamlit UI (calls the API; falls back to local model)
